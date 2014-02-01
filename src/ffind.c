@@ -12,12 +12,10 @@ int main(int argc, char **argv) {
     event_list e_list = NULL;
     file_list f_cur;
     event_list e_cur;
-//    char tStamp[MAXLINE];
     int i;
     unsigned int numEvents, totalEvents;
-    char request[MAXLINE];
     event* e;
-    unsigned int *enc_list = Calloc(sizeof(unsigned int), MAX_EVENTS);
+    unsigned long *enc_list = Calloc(sizeof(unsigned long), MAX_EVENTS);
 
     // Check for valid argument numbers
     if (argc == 1) {
@@ -40,8 +38,6 @@ int main(int argc, char **argv) {
     //TODO this is just a test; needs to be changed
     int count = 0;
     for (f_cur = f_list; f_cur != NULL; f_cur = f_cur->next) {
-        printf("%d: %s\n", count, f_cur->file);
-
         numEvents = 0;
         e = parseICS(f_cur->file, &numEvents); 
         e_list = eListInsert(e_list, e, numEvents);
@@ -53,18 +49,10 @@ int main(int argc, char **argv) {
         printf("Event %d:", count);
         printEventArray(e_cur->events, e_cur->numEvents);
         count++;
-
     }
 
-    strcpy(request, e_list->events[1]->rrule);
-    rrule rRule = parseRRULE(request);
-    printf("RRULE Parsing results:\nRequest: %s\nResults: %d, %07x, %lu\n", 
-            request, rRule->freq, rRule->byDay, rRule->dtend);
-
-    int day = dayofweek(1,2,2014);
-    printf("Today is: %d\n", day);
-
     convertToArray(e_list, MAX_EVENTS, &totalEvents, enc_list);
+
     //TODO create an array from events to quicksort
     //TODO free events
 
@@ -80,9 +68,10 @@ int main(int argc, char **argv) {
 }
 
 void convertToArray(event_list e_list, unsigned int maxEvents,
-        unsigned int *totalEvents, unsigned int *enc_list) {
+        unsigned int *totalEvents, unsigned long *enc_list) {
     event_list cur;
-    int i, freq; 
+    int i, j, freq, incr, d, m, y; 
+    int today, startDay;
     int counter = 0;
     unsigned long start, end, dtend;
     rrule rRule;
@@ -94,6 +83,7 @@ void convertToArray(event_list e_list, unsigned int maxEvents,
                 fprintf(stderr, 
                     "Too many events!\nMax number of allowed events is %d\n", 
                     MAX_EVENTS/2);
+                exit(0);
             }
             start = event_stolu(cur->events[i]->start,true,true);
             end = event_stolu(cur->events[i]->end,true,false);
@@ -108,27 +98,62 @@ void convertToArray(event_list e_list, unsigned int maxEvents,
                 dtend = rRule->dtend;
                 switch (freq) {
                     case 0: {
-
+                        //singleton event
+                        printf("Not sure if can reach here\n");
                         break;
                     } case 1: {
-
+                        for (j = 1; j <= MAX_DAYS; j++) {
+                            enc_list[counter] = addDay(start, j);
+                            counter++;
+                            enc_list[counter] = addDay(end, j);
+                            counter++;
+                        }
                         break;
                     } case 2: {
+                        d = grabDay(start);
+                        m = grabMonth(start);
+                        y = grabYear(start);
+                        today = dayofweek(d,m,y);
+                        today+=7;
 
+                        if (byDay == 0) {
+                            for (j = 7; j <= MAX_DAYS; j+=7) {
+                                enc_list[counter] = addDay(start, j);
+                                counter++;
+                                enc_list[counter] = addDay(end, j);
+                                counter++;
+                            }
+                        } else {
+                            startDay = 6; //LSB is Saturday 
+                            while (byDay != 0) {
+                                if (byDay&1) {
+                                    incr = today - startDay;
+                                    if (incr == 0) incr = 7;
+                                    for (j = incr; j <= MAX_DAYS; j+=7) {
+                                        enc_list[counter] = addDay(start, j);
+                                        counter++;
+                                        enc_list[counter] = addDay(end, j);
+                                        counter++;
+                                    }
+                                }
+                                byDay >>= 4;
+                                startDay--;
+                            }
+                        }
                         break;
                     } case 3: {
-
+                        //TODO: When extending for more days, add number
+                        // of months too.
                         break;
                     } default: {
                         printf("This field has yet to be implemented\n");
                         printf("Using single recurrence instead...\n");
                     }
                 }
-
-                counter++;
             }
         }
     }
+    *totalEvents = counter;
 
 }
 
@@ -171,7 +196,7 @@ unsigned long grabMonth(unsigned long encoding) {
     sprintf(buf, "%lu", encoding);
     strncpy(buf2, buf+4, 2);
     buf2[2] = '\0';
-    sscanf(buf2, "%lu", month);
+    sscanf(buf2, "%lu", &month);
     return month;
 }
 
@@ -182,7 +207,7 @@ unsigned long grabDay(unsigned long encoding) {
     sprintf(buf, "%lu", encoding);
     strncpy(buf2, buf+6, 2);
     buf2[2] = '\0';
-    sscanf(buf2, "%lu", day);
+    sscanf(buf2, "%lu", &day);
     return day;
 }
 
@@ -193,7 +218,7 @@ unsigned long grabYear(unsigned long encoding) {
     sprintf(buf, "%lu", encoding);
     strncpy(buf2, buf, 4);
     buf2[4] = '\0';
-    sscanf(buf2, "%lu", year);
+    sscanf(buf2, "%lu", &year);
     return year;
     
 }
@@ -205,7 +230,7 @@ unsigned long grabHour(unsigned long encoding) {
     sprintf(buf, "%lu", encoding);
     strncpy(buf2, buf+8, 2);
     buf2[2] = '\0';
-    sscanf(buf2, "%lu", hour);
+    sscanf(buf2, "%lu", &hour);
     return hour;
 }
 
@@ -216,17 +241,48 @@ unsigned long grabMinute(unsigned long encoding) {
     sprintf(buf, "%lu", encoding);
     strncpy(buf2, buf+10, 2);
     buf2[2] = '\0';
-    sscanf(buf2, "%lu", min);
+    sscanf(buf2, "%lu", &min);
     return min;
 }
 
+//RESTRICTION: Can only add up to 30 days...
 unsigned long addDay(unsigned long encoding, int days) {
-    unsigned long y, m, d;
+    if (days > 30) {
+        printf("Warning: This function only supports a max of 30 days\n");
+        printf("You may improve this feature later. :)");
+    }
+    char buf[MAXLINE];
+    unsigned long encoding2;
+    unsigned long y, m, d, h, min;
+    int b;
     y = grabYear(encoding);
     m = grabMonth(encoding);
     d = grabDay(encoding);
-
-
+    h = grabHour(encoding);
+    min = grabMinute(encoding);
+    b = grabLSB(encoding);
+    if (m == 1 || m == 3 || m == 5 || m == 7 || m == 8 || m == 10 || m == 12) {
+        //31 days
+        if (d+days > 31) {
+            if (m == 12) y++;
+            m = (m + 1) % 12;
+        }
+        d = (d+days) % 31;
+    } else if (m == 4 || m == 6 || m == 9 || m == 11) {
+        if (d+days > 30) m++;
+        d = (d+days) % 30;
+    } else {
+        if (y%4 == 0) {
+            if (d+days > 29) m++;
+            d = (d+days) % 29;
+        } else {
+            if (d+days > 28) m++;
+            d = (d+days) % 28;
+        }
+    }
+    sprintf(buf, "%lu%02lu%02lu%02lu%02lu%d", y,m,d,h,min,b);
+    sscanf(buf, "%lu", &encoding2);
+    return encoding2;
 }
 
 unsigned long event_stolu(char *str, bool startFlag, bool isStart) {
@@ -234,6 +290,7 @@ unsigned long event_stolu(char *str, bool startFlag, bool isStart) {
     char hhmmss[MAXLINE];
     char lu_str[MAXLINE];
     unsigned long encoding;
+    strcpy(lu_str,"");
 
     if (strstr(str, "Z") != NULL) {
         sscanf(str, "%[^T]T%[^Z]%*s", date, hhmmss);
@@ -250,6 +307,7 @@ unsigned long event_stolu(char *str, bool startFlag, bool isStart) {
             strcat(lu_str, "1");
         }
     }    
+    printf("%s\n", lu_str);
     sscanf(lu_str, "%lu", &encoding);
     return encoding;
 }
@@ -486,6 +544,7 @@ rrule parseRRULE(char *rrStr) {
             //TODO: Implement
         }
     }
+
     return rRule;
 }
 

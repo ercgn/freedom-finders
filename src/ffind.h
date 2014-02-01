@@ -14,7 +14,7 @@
 #define MAXCAL 15
 #define MAX_CAL_SIZE 32768
 #define MAX_EVENTS 65536 
-#define MAX_DAYS 30
+#define MAX_DAYS 14 
 
 struct file_list {
     char *file;
@@ -57,15 +57,17 @@ event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m);
 void createICSFile(event *events, unsigned int n); /* WORKS */
 rrule parseRRULE(char *rrStr);
 void convertToArray(event_list e_list, unsigned int maxEvents,
-                unsigned int *totalEvents, unsigned int *enc_list);
+                unsigned int *totalEvents, unsigned long *enc_list);
 
 /* Time manipulation functions */ 
 int dayofweek(int d, int m, int y);
+int grabLSB(unsigned long encoding);
 unsigned long grabMonth(unsigned long encoding);
 unsigned long grabDay(unsigned long encoding);
 unsigned long grabYear(unsigned long encoding);
 unsigned long grabHour(unsigned long encoding);
 unsigned long grabMinute(unsigned long encoding);
+/* This funciton can only add a max of 30 days */
 unsigned long addDay(unsigned long encoding, int days);
 
 /* Linked List Functions */
