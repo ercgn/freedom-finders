@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
-#include "ffind.h"
 #include "csapp.h"
-
-#define MAXLINE 8192
+#include "ffind.h"
 
 /* Function Prototypes */
 unsigned long event_stolu(char *str);
@@ -14,7 +13,7 @@ void event_lutos(unsigned long encoding, char *str);
 
 int main(int argc, char **argv) {
     char *file_list[argc-1];
-    char tStamp[MAXLINE];
+//    char tStamp[MAXLINE];
     int i;
 
     // Check for valid argument numbers
@@ -44,29 +43,29 @@ int main(int argc, char **argv) {
  * assumes yyyymmddThhmmss format, from ics standard 
  */
 unsigned long event_stolu(char *str) {
-    char date[MAXSIZE];
-    char hhmmss[MAXSIZE];
-    char lu_str[MAXSIZE];
+    char date[MAXLINE];
+    char hhmmss[MAXLINE];
+    char lu_str[MAXLINE];
     unsigned long encoding;
 
-    sscanf(str, "%[^/T]T%s", &date, &hhmmss);
+    sscanf(str, "%[^/T]T%s", date, hhmmss);
     strcat(lu_str, date);
     strcat(lu_str, hhmmss);
-    sscanf(lu_str, "%lu", encoding);
+    sscanf(lu_str, "%lu", &encoding);
     return encoding;
 }
 
 void event_lutos(unsigned long encoding, char *str) {
-    char str_enc[MAXSIZE];
-    char buf[MAXSIZE];
-    char date[MAXSIZE];
-    char hhmm[MAXSIZE];
+    char str_enc[MAXLINE];
+    char buf[MAXLINE];
+    char date[MAXLINE];
+    char hhmm[MAXLINE];
     strcpy(str, "");
 
     sprintf(str_enc, "%lu", encoding);
     strncpy(date, str_enc, 8);
     strcpy(hhmm, str_enc+8);
-    date[8] = '\0'
+    date[8] = '\0';
 
     strcat(buf, date);
     strcat(buf, "T");
