@@ -1,3 +1,0 @@
-void *qsort (void *a) {
-        
-}

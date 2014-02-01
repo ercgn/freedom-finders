@@ -97,7 +97,7 @@ unsigned int Sleep(unsigned int secs)
 {
     unsigned int rc;
 
-    if ((rc = sleep(secs)) < 0)
+    if ((rc = sleep(secs)) != 0)
 	unix_error("Sleep error");
     return rc;
 }
@@ -815,7 +815,7 @@ int open_clientfd_r(char *hostname, char *port) {
   
     /* Walk the list, using each addrinfo to try to connect */
     for (p = addlist; p; p = p->ai_next) {
-        if ((p->ai_family == AF_INET)) {
+        if (p->ai_family == AF_INET) {
             if (connect(clientfd, p->ai_addr, p->ai_addrlen) == 0) {
                 break; /* success */
             }
