@@ -45,9 +45,13 @@ int main(int argc, char **argv) {
     //TODO this is just a test; needs to be changed
     events = parseICS(file_list[0], &numEvents); 
 
-    //TODO create an array to quicksort
+    //TODO create an array from events to quicksort
+    //TODO free events
 
-    //TODO output the free time slots
+    //TODO output the free time slots in the form of events
+
+    //TODO create a ics file from array of events :<
+    //TODO free events
     return 0;
 }
 
@@ -191,7 +195,7 @@ void freeEvents(event *events, int n) {
 
 
 long unsigned STARTTIME = 2014020102390;
-event *getFreeTimes(long unsigned *times, unsigned n) {
+event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
     unsigned int count = 0;
     unsigned int event_pointer = 0;
     event *events = Calloc(sizeof(struct event), MAXLINE);
@@ -225,5 +229,21 @@ event *getFreeTimes(long unsigned *times, unsigned n) {
             else count--;
         }
     }
+    *m = event_pointer;
     return events;
+}
+
+void createICSFile(event *events, unsigned int n) {
+    FILE *fp = fopen("free_times.ics", "ab+");
+
+    // Write header
+    fprintf(fp, "BEGIN:VCALENDAR\nVERSION:2.0\n");
+    for (int i = 0; i < n; i++) {
+        fprintf(fp, "%sBEGIN:VEVENT\n", fp);
+        fprintf(fp, "%sDTSTART:%s\n", fp, event[i]->start);
+        fprintf(fp, "%sDTEND:%s\n", fp, event[i]->end);
+        fprintf(fp, "%sEND:VEVENT\n", fp);
+    }
+    //Write footer
+    fprintf(fp, "%sEND:VCALENDAR\n", fp);
 }
