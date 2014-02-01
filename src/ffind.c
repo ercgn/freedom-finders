@@ -20,7 +20,6 @@ void testfun(int *i) {
 }
 
 int main(int argc, char **argv) {
-    char *STARTTIME = "2014020102390";
 
     char *file_list[argc-1];
 //    char tStamp[MAXLINE];
@@ -190,7 +189,41 @@ void freeEvents(event *events, int n) {
     Free(events);
 }
 
-events *getFreeTimes(long unsigned *times) {
-    unsigned int i = 0;
 
+long unsigned STARTTIME = 2014020102390;
+event *getFreeTimes(long unsigned *times, unsigned n) {
+    unsigned int count = 0;
+    unsigned int event_pointer = 0;
+    event *events = Calloc(sizeof(struct event), MAXLINE);
+
+    for (int i = 0; i < n; i++) {
+        if (count == 0) {
+            // The previous time interval was a free time
+            event e = Malloc(sizeof(struct event));
+            e->start = Calloc(sizeof(char), MAXLINE);
+            e->end = Calloc(sizeof(char), MAXLINE);
+            e->rrule = Calloc(sizeof(char), MAXLINE);
+            events[event_pointer] = e;
+            event_pointer++;
+            if (i == 0) {
+                e->start = event_lutos(STARTTIME);
+            }
+            else {
+                e->start = event_lutos(times[i-1]);
+            }
+            e->end = event_lutos(times[i]);
+
+            // Handle the time
+            if (times[i] % 2 == 0) count++;
+            else {
+                printf("SOMETHING HORRIBLE HAS GONE WRONG, WE STOPPED TIME WHEN NOTHING WAS SCHEDULED\n");
+                exit(0);
+            }
+        }
+        else {
+            if (times[i] % 2 == 0) count++;
+            else count--;
+        }
+    }
+    return events;
 }
