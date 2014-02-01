@@ -39,17 +39,8 @@ int main(int argc, char **argv) {
         strcpy(file_list[i], argv[i]);
     }
 
-    // char *test = "20140131T090000";
-    // unsigned long test2 = event_stolu(test);
-    // char test3[MAXLINE];
-    // event_lutos(test2, test3);
-
-    // printf("%s\n%lu\n%s\n", test, test2, test3);
-
     //TODO this is just a test; needs to be changed
     events = parseICS(file_list[0], &numEvents); 
-
-    printEventArray(events, numEvents);
 
     return 0;
 }
@@ -67,8 +58,11 @@ unsigned long event_stolu(char *str) {
     char lu_str[MAXLINE];
     unsigned long encoding;
 
-
-    sscanf(str, "%[^T]T%s", date, hhmmss);
+    if (strstr(str, "Z") != NULL) {
+        sscanf(str, "%[^T]T%[^Z]%*s", date, hhmmss);
+    } else {
+        sscanf(str, "%[^T]T%s", date, hhmmss);
+    }
     strcat(lu_str, date);
     hhmmss[4] = '\0';
     strcat(lu_str, hhmmss);
@@ -99,27 +93,27 @@ void event_lutos(unsigned long encoding, char *str) {
 event* parseICS(char *file, unsigned int *numEvents) {
     char line[MAXLINE];
     char date[MAXLINE];
-
+    
     int fd = Open(file, 'r', DEF_MODE & ~DEF_UMASK);
     rio_t rio;
     Rio_readinitb(&rio, fd);
     size_t n;
 
-    event *events = Calloc(sizeof(event), MAXLINE);
+    event *events = Calloc(sizeof(struct event), MAXLINE);
     bool seenEndFlag = true;
     int i = 0;
 
     while((n = Rio_readlineb(&rio, line, MAXLINE)) != 0) {
+        strcpy(date, "");
         if (strncmp(line, "BEGIN:VEVENT", 12) == 0) {
             // Create new event and increase counter
             if (seenEndFlag) {
-                event e = Malloc(sizeof(event));
+                event e = Malloc(sizeof(struct event));
                 e->start = Calloc(sizeof(char), MAXLINE);
                 e->end = Calloc(sizeof(char), MAXLINE);
                 e->rrule = Calloc(sizeof(char), MAXLINE);
                 events[i] = e;
                 seenEndFlag = false;
-                i++;
             }
             else {
                 printf("COULD NOT READ FILE OH NO\n");
@@ -129,23 +123,24 @@ event* parseICS(char *file, unsigned int *numEvents) {
             // events[i-1] because we i++ after we created event
             if (!seenEndFlag) {
                 sscanf(line, "%*[^:]:%s", date);
-                strcpy(events[i-1]->start, date);
+                strcpy(events[i]->start, date);
             }
         }
         else if (strncmp(line, "DTEND", 5) == 0) {
             if (!seenEndFlag) {
                 sscanf(line, "%*[^:]:%s", date);
-                strcpy(events[i-1]->end, date);    
+                strcpy(events[i]->end, date);    
             }
         }
         else if (strncmp(line, "RRULE", 5) == 0) {
             if (!seenEndFlag) {
-                sscanf(line, "%*[^:]:%s", date);
-                strcpy(events[i-1]->rrule, date);
+                sscanf(line, "RRULE:%s", date);
+                strcpy(events[i]->rrule, date);
             }
         }
         else if (strncmp(line, "END:VEVENT", 10) == 0) {
             seenEndFlag = true;
+            i++;
         }
     }
     close(fd);
@@ -154,7 +149,7 @@ event* parseICS(char *file, unsigned int *numEvents) {
 }
 
 void printEventArray(event *events, int n) {
-    printf("Printing array...\n");
+//    printf("Printing array...\n");
     for (int i = 0; i < n; i++) {
         printf("    %d: start: %s\n", i, events[i]->start);
         printf("       end:   %s\n", events[i]->end);

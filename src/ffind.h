@@ -10,10 +10,12 @@
 
 #include "csapp.h"
 
-typedef struct {
+struct event {
     char *start;
     char *end;
     char *rrule;
-} *event;
+};
+
+typedef struct event* event;
 
 #endif /* __FFIND_H__ */
