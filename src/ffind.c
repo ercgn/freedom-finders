@@ -11,6 +11,10 @@ unsigned long event_stolu(char *str);
 void event_lutos(unsigned long encoding, char *str);
 /* End Function Prototypes */
 
+void testfun(int *i) {
+    *i = 1000;
+}
+
 int main(int argc, char **argv) {
     char *file_list[argc-1];
 //    char tStamp[MAXLINE];
@@ -30,7 +34,16 @@ int main(int argc, char **argv) {
         file_list[i] = argv[i];
     }
 
+    char *test = "20140131T090000";
+    unsigned long test2 = event_stolu(test);
+    char test3[MAXLINE];
+    event_lutos(test2, test3);
 
+    printf("%s\n%lu\n%s\n", test, test2, test3);
+
+    printf("%d\n", i);
+    testfun(&i);
+    printf("%d\n", i);
     //event_list = parse(&file_list);
     return 0;
 }
@@ -51,6 +64,7 @@ unsigned long event_stolu(char *str) {
 
     sscanf(str, "%[^T]T%s", date, hhmmss);
     strcat(lu_str, date);
+    hhmmss[4] = '\0';
     strcat(lu_str, hhmmss);
     sscanf(lu_str, "%lu", &encoding);
     return encoding;
