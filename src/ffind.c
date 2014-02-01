@@ -90,7 +90,7 @@ void event_lutos(unsigned long encoding, char *str) {
     strcpy(str, buf);
 }
 
-void *parseICS(char *file) {
+void *parseICS(char *file, unsigned int *numEvents) {
     char line[MAXLINE];
     char date[MAXLINE];
 
@@ -126,12 +126,14 @@ void *parseICS(char *file) {
             strcpy(events[i-1]->end, date);
         }
         else if (strncmp(line, "RRULE", 5) == 0) {
-
+            sscanf(line, "%*[^:]:%s", date);
+            strcpy(events[i-1]->rrule, date);
         }
         else if (strncmp(line, "END:VEVENT", 10) == 0) {
             seenEndFlag = true;
         }
     }
     close(fd);
-    return NULL;
+    numEvents = i;
+    return events;
 }
