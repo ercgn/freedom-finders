@@ -1,0 +1,12 @@
+Things to do: Freedom Finders
+Every line here is a function to be coded separately
+- Take multiple ics files -> how to do?
+- parse ics file -> output array of all the events
+	-> hash dates
+	-> put into array/map?
+- (y) sort (quick!)
+- do that parantheses thing -> output array of "Free times"
+
+- date to hash
+- hash to date (wait what was the hash idea again?)
+- take options to set variables for START_TIME -> get from lifes, DURATION=week, MIN_INTERVAL=30(minutes)
