@@ -14,8 +14,10 @@ int main(int argc, char **argv) {
     event_list e_cur;
 //    char tStamp[MAXLINE];
     int i;
-    unsigned int numEvents;
+    unsigned int numEvents, totalEvents;
+    char request[MAXLINE];
     event* e;
+    unsigned int *enc_list = Calloc(sizeof(unsigned int), MAX_EVENTS);
 
     // Check for valid argument numbers
     if (argc == 1) {
@@ -54,24 +56,80 @@ int main(int argc, char **argv) {
 
     }
 
+    strcpy(request, e_list->events[1]->rrule);
+    rrule rRule = parseRRULE(request);
+    printf("RRULE Parsing results:\nRequest: %s\nResults: %d, %07x, %lu\n", 
+            request, rRule->freq, rRule->byDay, rRule->dtend);
 
-    createICSFile(e_list->events, numEvents);
+    int day = dayofweek(1,2,2014);
+    printf("Today is: %d\n", day);
 
+    convertToArray(e_list, MAX_EVENTS, &totalEvents, enc_list);
     //TODO create an array from events to quicksort
     //TODO free events
 
     //TODO output the free time slots in the form of events
 
     //TODO create a ics file from array of events :<
+    createICSFile(e_list->events, numEvents);
     //TODO free events
-
-
-    for (i = 0; i < MAXCAL; i++) {
-        //insert free code here.        
-    } 
     freeEventList(e_list);
     freeFileList(f_list);
+    Free(enc_list);
     return 0;
+}
+
+void convertToArray(event_list e_list, unsigned int maxEvents,
+        unsigned int *totalEvents, unsigned int *enc_list) {
+    event_list cur;
+    int i, freq; 
+    int counter = 0;
+    unsigned long start, end, dtend;
+    rrule rRule;
+    unsigned int byDay;
+
+    for (cur = e_list; cur != NULL; cur = cur->next) {
+        for (i = 0; i < cur->numEvents; i++) {
+            if (counter > MAX_EVENTS) {
+                fprintf(stderr, 
+                    "Too many events!\nMax number of allowed events is %d\n", 
+                    MAX_EVENTS/2);
+            }
+            start = event_stolu(cur->events[i]->start,true,true);
+            end = event_stolu(cur->events[i]->end,true,false);
+            enc_list[counter] = start;
+            counter++;
+            enc_list[counter] = end;
+            counter++;
+            if (strcmp(cur->events[i]->rrule, "") != 0) {
+                rRule = parseRRULE(cur->events[i]->rrule);
+                freq = rRule->freq;
+                byDay = rRule->byDay;
+                dtend = rRule->dtend;
+                switch (freq) {
+                    case 0: {
+
+                        break;
+                    } case 1: {
+
+                        break;
+                    } case 2: {
+
+                        break;
+                    } case 3: {
+
+                        break;
+                    } default: {
+                        printf("This field has yet to be implemented\n");
+                        printf("Using single recurrence instead...\n");
+                    }
+                }
+
+                counter++;
+            }
+        }
+    }
+
 }
 
 // insertion is in front
@@ -101,7 +159,77 @@ event_list eListInsert(event_list e_list, event *events, unsigned int n) {
  * true = start
  * false = end
  */
-unsigned long event_stolu(char *str, bool isStart) {
+
+int grabLSB(unsigned long encoding) {
+    return encoding & 1;
+}
+
+unsigned long grabMonth(unsigned long encoding) {
+    char buf[MAXLINE];
+    char buf2[MAXLINE];
+    unsigned long month;
+    sprintf(buf, "%lu", encoding);
+    strncpy(buf2, buf+4, 2);
+    buf2[2] = '\0';
+    sscanf(buf2, "%lu", month);
+    return month;
+}
+
+unsigned long grabDay(unsigned long encoding) {
+    char buf[MAXLINE];
+    char buf2[MAXLINE];
+    unsigned long day;
+    sprintf(buf, "%lu", encoding);
+    strncpy(buf2, buf+6, 2);
+    buf2[2] = '\0';
+    sscanf(buf2, "%lu", day);
+    return day;
+}
+
+unsigned long grabYear(unsigned long encoding) {
+    char buf[MAXLINE];
+    char buf2[MAXLINE];
+    unsigned long year;
+    sprintf(buf, "%lu", encoding);
+    strncpy(buf2, buf, 4);
+    buf2[4] = '\0';
+    sscanf(buf2, "%lu", year);
+    return year;
+    
+}
+
+unsigned long grabHour(unsigned long encoding) {
+    char buf[MAXLINE];
+    char buf2[MAXLINE];
+    unsigned long hour;
+    sprintf(buf, "%lu", encoding);
+    strncpy(buf2, buf+8, 2);
+    buf2[2] = '\0';
+    sscanf(buf2, "%lu", hour);
+    return hour;
+}
+
+unsigned long grabMinute(unsigned long encoding) {
+    char buf[MAXLINE];
+    char buf2[MAXLINE];
+    unsigned long min;
+    sprintf(buf, "%lu", encoding);
+    strncpy(buf2, buf+10, 2);
+    buf2[2] = '\0';
+    sscanf(buf2, "%lu", min);
+    return min;
+}
+
+unsigned long addDay(unsigned long encoding, int days) {
+    unsigned long y, m, d;
+    y = grabYear(encoding);
+    m = grabMonth(encoding);
+    d = grabDay(encoding);
+
+
+}
+
+unsigned long event_stolu(char *str, bool startFlag, bool isStart) {
     char date[MAXLINE];
     char hhmmss[MAXLINE];
     char lu_str[MAXLINE];
@@ -115,11 +243,13 @@ unsigned long event_stolu(char *str, bool isStart) {
     strcat(lu_str, date);
     hhmmss[4] = '\0';
     strcat(lu_str, hhmmss);
-    if (isStart) {
-        strcat(lu_str, "0");
-    } else {
-        strcat(lu_str, "1");
-    }
+    if (startFlag) {
+        if (isStart) {
+            strcat(lu_str, "0");
+        } else {
+            strcat(lu_str, "1");
+        }
+    }    
     sscanf(lu_str, "%lu", &encoding);
     return encoding;
 }
@@ -283,13 +413,91 @@ event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
     return events;
 }
 
+// returns 0 for Sun, 1 for Mon, 2 for Tues etc.
+int dayofweek(int d, int m, int y)
+{
+    static int t[] = {0,3,2,5,0,3,5,1,4,6,2,4};
+    y -= m < 3;
+    return (y + y/4 - y/100 + y/400 + t[m-1] + d) % 7;
+}
+
+rrule parseRRULE(char *rrStr) {
+    char buf[MAXLINE];
+    char attr[MAXLINE];
+    char field[MAXLINE];
+    strcpy(buf, rrStr);
+    int flag = 1;
+    rrule rRule = Calloc(sizeof(struct rrule), 1);
+    while (flag) {
+        strcpy(attr, "");
+        if (strstr(buf, ";") != NULL) {
+            sscanf(buf, "%[^;];%s", attr, buf);
+        } else {
+            flag = 0;
+            sscanf(buf, "%s", attr);
+        }
+
+        if (strstr(attr, "FREQ=") != NULL) {
+            sscanf(attr, "FREQ=%s", field);
+            if (strstr(field, "DAILY") != NULL) {
+                rRule->freq = 1;
+            } else if (strstr(field, "WEEKLY") != NULL) {
+                rRule->freq = 2;
+            } else if (strstr(field, "MONTHLY") != NULL) {
+                rRule->freq = 3;
+            } else if (strstr(field, "YEARLY") != NULL) {
+                rRule->freq = 4;
+            } else {
+                //placeholder for now
+                rRule->freq = 5;
+            }
+        } else if (strstr(attr, "UNTIL=") != NULL) {
+            sscanf(attr, "UNTIL=%s", field);
+            rRule->dtend = event_stolu(field, false, false);
+
+
+        } else if (strstr(attr, "BYDAY=") != NULL) {
+            sscanf(attr, "BYDAY=%s", field);
+            rRule->byDay = 0x0000000;
+            if (strstr(field, "MO") != NULL) {
+                rRule->byDay += 0x0100000;
+            }
+            if (strstr(field, "TU") != NULL) {
+                rRule->byDay += 0x0010000;
+            }
+            if (strstr(field, "WE") != NULL) {
+                rRule->byDay += 0x0001000;
+            }
+            if (strstr(field, "TH") != NULL) {
+                rRule->byDay += 0x0000100;
+            }
+            if (strstr(field, "FR") != NULL) {
+                rRule->byDay += 0x0000010;
+            }
+            if (strstr(field, "SA") != NULL) {
+                rRule->byDay += 0x0000001;
+            }
+            if (strstr(field, "SU") != NULL) {
+                rRule->byDay += 0x1000000;
+            }
+        } else if (strstr(attr, "INTERVAL=") != NULL) {
+            //TODO: Implement
+        } else if (strstr(attr, "COUNT=") != NULL) {
+            //TODO: Implement
+        }
+    }
+    return rRule;
+}
+
+
+
 void createICSFile(event *events, unsigned int n) {
     int fd = Open("free_times.ics", 
                    O_WRONLY | O_CREAT | O_TRUNC, 
                    DEF_MODE & ~DEF_UMASK);
     rio_t rio;
     Rio_readinitb(&rio, fd);
-    char buf[MAXLINE];
+    char buf[MAX_CAL_SIZE];
 
     // Write header
     strcpy(buf, "BEGIN:VCALENDAR\nVERSION:2.0\n");
