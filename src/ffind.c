@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ffind.h"
 #include "csapp.h"
+
+#define MAXLINE 8192
 
 /* Function Prototypes */
 unsigned long event_stolu(char *str);
