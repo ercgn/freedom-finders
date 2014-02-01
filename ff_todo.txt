@@ -7,6 +7,6 @@ Every line here is a function to be coded separately
 - (y) sort (quick!)
 - do that parantheses thing -> output array of "Free times"
 
-- date to hash
-- hash to date (wait what was the hash idea again?)
+- date to hash - yyyyMMddthhmmss ->sscanf -> yyyyMMddhhmm (double)
+- hash to date - yyyyMMddhhmm -> yyyyMMddthhmmss (idk how)
 - take options to set variables for START_TIME -> get from lifes, DURATION=week, MIN_INTERVAL=30(minutes)
