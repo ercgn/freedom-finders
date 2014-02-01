@@ -1,12 +1,22 @@
 Things to do: Freedom Finders
 Every line here is a function to be coded separately
 - Take multiple ics files -> how to do?
-- parse ics file -> output array of all the events
+- (JW) parse ics file -> output array of all the events
 	-> hash dates
 	-> put into array/map?
-- (y) sort (quick!)
 - do that parantheses thing -> output array of "Free times"
 
-- date to hash - yyyyMMddthhmmss ->sscanf -> yyyyMMddhhmm (double)
-- hash to date - yyyyMMddhhmm -> yyyyMMddthhmmss (idk how)
+- (y) date to hash - yyyyMMddthhmmss ->sscanf -> yyyyMMddhhmm (double)
+- (y) hash to date - yyyyMMddhhmm -> yyyyMMddthhmmss (idk how)
 - take options to set variables for START_TIME -> get from lifes, DURATION=week, MIN_INTERVAL=30(minutes)
+
+quick sort algorithm: 
+function quicksort(array)
+     if length(array) = 1
+         return array  // an array of zero or one elements is already sorted
+     select and remove a pivot element pivot from 'array'  // see '#Choice of pivot' below
+     create empty lists less and greater
+     for each x in array
+         if x = pivot then append x to less
+         else append x to greater
+     return concatenate(quicksort(less), list(pivot), quicksort(greater)) // two recursive calls
