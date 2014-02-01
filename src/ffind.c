@@ -18,6 +18,8 @@ void testfun(int *i) {
 }
 
 int main(int argc, char **argv) {
+    char *STARTTIME = "2014020102390";
+
     char *file_list[argc-1];
 //    char tStamp[MAXLINE];
     int i;
@@ -42,6 +44,9 @@ int main(int argc, char **argv) {
     //TODO this is just a test; needs to be changed
     events = parseICS(file_list[0], &numEvents); 
 
+    //TODO create an array to quicksort
+
+    //TODO output the free time slots
     return 0;
 }
 
@@ -165,4 +170,9 @@ void freeEvents(event *events, int n) {
         Free(events[i]);
     }
     Free(events);
+}
+
+events *getFreeTimes(long unsigned *times) {
+    unsigned int i = 0;
+
 }
