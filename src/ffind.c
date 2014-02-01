@@ -85,7 +85,7 @@ void *parseICS(char *file, unsigned int *numEvents) {
     Rio_readinitb(&rio, fd);
     size_t n;
 
-    event *events = Calloc(MAXLINE, sizeof(event));
+    event *events = Calloc(sizeof(event), MAXLINE);
     bool seenEndFlag = true;
     int i = 0;
 
@@ -94,6 +94,9 @@ void *parseICS(char *file, unsigned int *numEvents) {
             // Create new event and increase counter
             if (seenEndFlag) {
                 event e = Malloc(sizeof(event));
+                e->start = Calloc(sizeof(char), MAXLINE);
+                e->end = Calloc(sizeof(char), MAXLINE);
+                e->rrule = Calloc(sizeof(char), MAXLINE);
                 events[i] = e;
                 seenEndFlag = false;
                 i++;
@@ -105,6 +108,7 @@ void *parseICS(char *file, unsigned int *numEvents) {
         else if (strncmp(line, "DTSTART", 7) == 0) {
             // events[i-1] because we i++ after we created event
             sscanf(line, "%*[^:]:%s", date);
+
             strcpy(events[i-1]->start, date);
         }
         else if (strncmp(line, "DTEND", 5) == 0) {
@@ -122,4 +126,13 @@ void *parseICS(char *file, unsigned int *numEvents) {
     close(fd);
     numEvents = i;
     return events;
+}
+
+void printEventArray(event* events, int n) {
+    printf("Printing array...\n");
+    for (int i = 0; i < n; i++) {
+        printf("    %d: start: %s\n", i, events[i]->start);
+        printf("        end:   %s\n", events[i]->end);
+        printf("        rrule: %s\n", events[i]->rrule);
+    }
 }
