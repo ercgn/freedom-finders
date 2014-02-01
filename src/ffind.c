@@ -48,6 +48,7 @@ unsigned long event_stolu(char *str) {
     char lu_str[MAXLINE];
     unsigned long encoding;
 
+    
     sscanf(str, "%[^T]T%s", date, hhmmss);
     strcat(lu_str, date);
     strcat(lu_str, hhmmss);
@@ -77,8 +78,9 @@ void event_lutos(unsigned long encoding, char *str) {
 
 void *parseICS(char *file) {
     char line[MAXLINE];
+    char date[MAXLINE];
 
-    fd = open(file, "r");
+    int fd = open(file, 'r');
     rio_t rio;
     Rio_readinitb(&rio, fd);
 
@@ -86,18 +88,34 @@ void *parseICS(char *file) {
     bool seenEndFlag = true;
     int i = 0;
 
-    while((n = Rio_readlineb(&rio, line, MAXLINE)) != 0) {
-        if (strncmp(line, "BEGIN", 5) == 0) {
-            
-        }
-        if (strncmp(line, "DTSTART", 7) == 0) {
-            // set start
+    while((size_t n = Rio_readlineb(&rio, line, MAXLINE)) != 0) {
+        if (strncmp(line, "BEGIN:VEVENT", 12) == 0) {
+            // Create new event and increase counter
+            if (seenEndFlag) {
+                event *e = Malloc(sizeof(event));
+                events[i] = e;
+                seenEndFlag = false;
+                i++;
+            }
+            else {
+                printf("COULD NOT READ FILE OH NO\n")
+            }
+        }}
+        else if (strncmp(line, "DTSTART", 7) == 0) {
+            // events[i-1] because we i++ after we created event
+            sscanf(line, "%[^:]:%s", &date);
+            events[i-1].start = date;
         }
         else if (strncmp(line, "DTEND", 5) == 0) {
-            // set end
+            sscanf(line, "%[^:]:%s", &date);
+            events[i-1].end = date;
         }
         else if (strncmp(line, "RRULE", 5) == 0) {
 
         }
+        else if (strncmp(line, "END:VEVENT", 10) == 0) {
+            seenEndFlag = true;
+        }
     }
+    close(fd);
 }
