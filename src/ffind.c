@@ -48,7 +48,8 @@ unsigned long event_stolu(char *str) {
     char lu_str[MAXLINE];
     unsigned long encoding;
 
-    sscanf(str, "%[^T]T%s", &date, &hhmmss);
+
+    sscanf(str, "%[^T]T%s", date, hhmmss);
     strcat(lu_str, date);
     strcat(lu_str, hhmmss);
     sscanf(lu_str, "%lu", &encoding);
@@ -82,32 +83,33 @@ void *parseICS(char *file) {
     int fd = open(file, 'r');
     rio_t rio;
     Rio_readinitb(&rio, fd);
+    size_t n;
 
     event *events = Calloc(MAXLINE, sizeof(event));
     bool seenEndFlag = true;
     int i = 0;
 
-    while((size_t n = Rio_readlineb(&rio, line, MAXLINE)) != 0) {
+    while((n = Rio_readlineb(&rio, line, MAXLINE)) != 0) {
         if (strncmp(line, "BEGIN:VEVENT", 12) == 0) {
             // Create new event and increase counter
             if (seenEndFlag) {
-                event *e = Malloc(sizeof(event));
+                event e = Malloc(sizeof(event));
                 events[i] = e;
                 seenEndFlag = false;
                 i++;
             }
             else {
-                printf("COULD NOT READ FILE OH NO\n")
+                printf("COULD NOT READ FILE OH NO\n");
             }
-        }}
+        }
         else if (strncmp(line, "DTSTART", 7) == 0) {
             // events[i-1] because we i++ after we created event
-            sscanf(line, "%[^:]:%s", &date);
-            events[i-1].start = date;
+            sscanf(line, "%*[^:]:%s", date);
+            strcpy(events[i-1]->start, date);
         }
         else if (strncmp(line, "DTEND", 5) == 0) {
-            sscanf(line, "%[^:]:%s", &date);
-            events[i-1].end = date;
+            sscanf(line, "%*[^:]:%s", date);
+            strcpy(events[i-1]->end, date);
         }
         else if (strncmp(line, "RRULE", 5) == 0) {
             sscanf(line, "%[^:]:%s", &date);
@@ -118,4 +120,5 @@ void *parseICS(char *file) {
         }
     }
     close(fd);
+    return NULL;
 }
