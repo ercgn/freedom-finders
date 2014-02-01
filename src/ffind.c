@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     f_times = getFreeTimes(enc_list_adj, totalEvents, &numFreeEvent);
     createICSFile(f_times, numFreeEvent);
     printf("Created 'free_times.ics' in current directory!\n");
-    
+
     freeEventList(e_list);
     freeFileList(f_list);
     Free(enc_list);
@@ -333,10 +333,10 @@ void event_lutos(unsigned long encoding, char *str, bool *isStart) {
 
     sprintf(str_enc, "%lu", encoding);
     strncpy(date, str_enc, 8);
-    strncpy(hhmm, str_enc+8, 4);
-    strcpy(start, str_enc+12);
     date[8] = '\0';
+    strncpy(hhmm, str_enc+8, 4);
     hhmm[12] = '\0';
+    strcpy(start, str_enc+12);
 
     strcat(buf, date);
     strcat(buf, "T");
