@@ -110,7 +110,8 @@ void *parseICS(char *file) {
             events[i-1].end = date;
         }
         else if (strncmp(line, "RRULE", 5) == 0) {
-
+            sscanf(line, "%[^:]:%s", &date);
+            strcpy(events[i-1]->rrule, line);
         }
         else if (strncmp(line, "END:VEVENT", 10) == 0) {
             seenEndFlag = true;
