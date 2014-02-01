@@ -10,10 +10,12 @@ int main(int argc, char **argv) {
 
     file_list f_list = NULL;
     event_list e_list = NULL;
+    file_list f_cur;
+    event_list e_cur;
 //    char tStamp[MAXLINE];
     int i;
     unsigned int numEvents;
-    file_list cur;
+    event* e;
 
     // Check for valid argument numbers
     if (argc == 1) {
@@ -35,12 +37,24 @@ int main(int argc, char **argv) {
 
     //TODO this is just a test; needs to be changed
     int count = 0;
-    for (cur = f_list; cur != NULL; cur = cur->next) {
-        printf("%d: %s\n", count, cur->file);
+    for (f_cur = f_list; f_cur != NULL; f_cur = f_cur->next) {
+        printf("%d: %s\n", count, f_cur->file);
+
+        numEvents = 0;
+        e = parseICS(f_cur->file, &numEvents); 
+        e_list = eListInsert(e_list, e, numEvents);
         count++;
     }
-    e_list = eListInsert(e_list, parseICS(f_list->file, &numEvents));
-    printEventArray(e_list->events, numEvents);
+
+    count = 0;
+    for (e_cur = e_list; e_cur != NULL; e_cur = e_cur->next) {
+        printf("Event %d:", count);
+        printEventArray(e_cur->events, e_cur->numEvents);
+        count++;
+
+    }
+
+
     createICSFile(e_list->events, numEvents);
 
     //TODO create an array from events to quicksort
@@ -71,9 +85,10 @@ file_list fListInsert(file_list f_list, char *file) {
 
 
 // insertion is in front
-event_list eListInsert(event_list e_list, event *events) {
+event_list eListInsert(event_list e_list, event *events, unsigned int n) {
     event_list new_node = Malloc(sizeof(struct event_list));
     new_node->events = events; 
+    new_node->numEvents = n;
     new_node->next = e_list;
     return new_node;
 }
@@ -216,20 +231,19 @@ void freeFileList(file_list f_list) {
 void freeEventList(event_list e_list) {
     event_list cur;
     for (cur = e_list; cur != NULL; cur = cur->next) {
-        Free(cur);
+        freeEvents(cur->events, cur->numEvents);
     }
 }
 
 void freeEvents(event *events, int n) {
-    for (int i = 0; i < n; i++) {
+    int i;
+    for (i = 0; i < n; i++) {
         Free(events[i]->start);
         Free(events[i]->end);
         Free(events[i]->rrule);
         Free(events[i]);
     }
-    Free(events);
 }
-
 
 long unsigned STARTTIME = 2014020102390;
 event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
