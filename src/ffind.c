@@ -6,11 +6,13 @@
 #include "csapp.h"
 #include "ffind.h"
 
+
 /* Function Prototypes */
-unsigned long event_stolu(char *str);
-void event_lutos(unsigned long encoding, char *str);
+unsigned long event_stolu(char *str, bool isStart);
+void event_lutos(unsigned long encoding, char *str, bool *isStart);
 event* parseICS(char *file, unsigned int *numEvents);
 void printEventArray(event* events, int n);
+//void parseRRULE(char *rrule, )
 /* End Function Prototypes */
 
 void testfun(int *i) {
@@ -51,13 +53,15 @@ int main(int argc, char **argv) {
 }
 
 
-// - date to hash - yyyyMMddthhmmss ->sscanf -> yyyyMMddhhmm (double)
-// - hash to date - yyyyMMddhhmm -> yyyyMMddthhmmss (idk how)
+// - date to hash - yyyyMMddthhmmss ->sscanf -> yyyyMMddhhmmb (double)
+// - hash to date - yyyyMMddhhmmb -> yyyyMMddthhmmss (idk how)
 
 /* 
  * assumes yyyymmddThhmmss format, from ics standard 
+ * true = start
+ * false = end
  */
-unsigned long event_stolu(char *str) {
+unsigned long event_stolu(char *str, bool isStart) {
     char date[MAXLINE];
     char hhmmss[MAXLINE];
     char lu_str[MAXLINE];
@@ -71,26 +75,40 @@ unsigned long event_stolu(char *str) {
     strcat(lu_str, date);
     hhmmss[4] = '\0';
     strcat(lu_str, hhmmss);
+    if (isStart) {
+        strcat(lu_str, "0");
+    } else {
+        strcat(lu_str, "1");
+    }
     sscanf(lu_str, "%lu", &encoding);
     return encoding;
 }
 
-void event_lutos(unsigned long encoding, char *str) {
+void event_lutos(unsigned long encoding, char *str, bool *isStart) {
     char str_enc[MAXLINE];
     char buf[MAXLINE];
     char date[MAXLINE];
     char hhmm[MAXLINE];
+    char start[1];
     strcpy(str, "");
 
     sprintf(str_enc, "%lu", encoding);
     strncpy(date, str_enc, 8);
-    strcpy(hhmm, str_enc+8);
+    strncpy(hhmm, str_enc+8, 4);
+    strcpy(start, str_enc+12);
     date[8] = '\0';
+    hhmm[12] = '\0';
 
     strcat(buf, date);
     strcat(buf, "T");
     strcat(buf, hhmm);
     strcat(buf, "00");
+
+    if (atoi(start) == 0) {
+        *isStart = true;
+    } else {
+        *isStart = false;
+    }
 
     strcpy(str, buf);
 }
@@ -98,7 +116,7 @@ void event_lutos(unsigned long encoding, char *str) {
 event* parseICS(char *file, unsigned int *numEvents) {
     char line[MAXLINE];
     char date[MAXLINE];
-    
+
     int fd = Open(file, 'r', DEF_MODE & ~DEF_UMASK);
     rio_t rio;
     Rio_readinitb(&rio, fd);
@@ -154,7 +172,7 @@ event* parseICS(char *file, unsigned int *numEvents) {
 }
 
 void printEventArray(event *events, int n) {
-//    printf("Printing array...\n");
+    printf("Printing array...\n");
     for (int i = 0; i < n; i++) {
         printf("    %d: start: %s\n", i, events[i]->start);
         printf("       end:   %s\n", events[i]->end);
