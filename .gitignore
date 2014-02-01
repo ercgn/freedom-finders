@@ -18,4 +18,5 @@
 *.app
 
 .DS_Store
+.metadata/
 *.swp

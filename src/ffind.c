@@ -21,7 +21,6 @@ void testfun(int *i) {
 }
 
 int main(int argc, char **argv) {
-    char *STARTTIME = "2014020102390";
 
     char *file_list[argc-1];
 //    char tStamp[MAXLINE];
@@ -47,9 +46,13 @@ int main(int argc, char **argv) {
     //TODO this is just a test; needs to be changed
     events = parseICS(file_list[0], &numEvents); 
 
-    //TODO create an array to quicksort
+    //TODO create an array from events to quicksort
+    //TODO free events
 
-    //TODO output the free time slots
+    //TODO output the free time slots in the form of events
+
+    //TODO create a ics file from array of events :<
+    //TODO free events
     return 0;
 }
 
@@ -191,7 +194,57 @@ void freeEvents(event *events, int n) {
     Free(events);
 }
 
-event *getFreeTimes(long unsigned *times) {
-    unsigned int i = 0;
 
+long unsigned STARTTIME = 2014020102390;
+event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
+    unsigned int count = 0;
+    unsigned int event_pointer = 0;
+    event *events = Calloc(sizeof(struct event), MAXLINE);
+
+    for (int i = 0; i < n; i++) {
+        if (count == 0) {
+            // The previous time interval was a free time
+            event e = Malloc(sizeof(struct event));
+            e->start = Calloc(sizeof(char), MAXLINE);
+            e->end = Calloc(sizeof(char), MAXLINE);
+            e->rrule = Calloc(sizeof(char), MAXLINE);
+            events[event_pointer] = e;
+            event_pointer++;
+            if (i == 0) {
+                e->start = event_lutos(STARTTIME);
+            }
+            else {
+                e->start = event_lutos(times[i-1]);
+            }
+            e->end = event_lutos(times[i]);
+
+            // Handle the time
+            if (times[i] % 2 == 0) count++;
+            else {
+                printf("SOMETHING HORRIBLE HAS GONE WRONG, WE STOPPED TIME WHEN NOTHING WAS SCHEDULED\n");
+                exit(0);
+            }
+        }
+        else {
+            if (times[i] % 2 == 0) count++;
+            else count--;
+        }
+    }
+    *m = event_pointer;
+    return events;
+}
+
+void createICSFile(event *events, unsigned int n) {
+    FILE *fp = fopen("free_times.ics", "ab+");
+
+    // Write header
+    fprintf(fp, "BEGIN:VCALENDAR\nVERSION:2.0\n");
+    for (int i = 0; i < n; i++) {
+        fprintf(fp, "%sBEGIN:VEVENT\n", fp);
+        fprintf(fp, "%sDTSTART:%s\n", fp, event[i]->start);
+        fprintf(fp, "%sDTEND:%s\n", fp, event[i]->end);
+        fprintf(fp, "%sEND:VEVENT\n", fp);
+    }
+    //Write footer
+    fprintf(fp, "%sEND:VCALENDAR\n", fp);
 }
