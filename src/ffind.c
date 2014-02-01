@@ -72,3 +72,30 @@ void event_lutos(unsigned long encoding, char *str) {
 
     strcpy(str, buf);
 }
+
+void *parseICS(char *file) {
+    char line[MAXLINE];
+
+    fd = open(file, "r");
+    rio_t rio;
+    Rio_readinitb(&rio, fd);
+
+    event *events = Calloc(MAXLINE, sizeof(event));
+    bool seenEndFlag = true;
+    int i = 0;
+
+    while((n = Rio_readlineb(&rio, line, MAXLINE)) != 0) {
+        if (strncmp(line, "BEGIN", 5) == 0) {
+            
+        }
+        if (strncmp(line, "DTSTART", 7) == 0) {
+            // set start
+        }
+        else if (strncmp(line, "DTEND", 5) == 0) {
+            // set end
+        }
+        else if (strncmp(line, "RRULE", 5) == 0) {
+
+        }
+    }
+}
