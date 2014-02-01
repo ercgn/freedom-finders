@@ -9,7 +9,8 @@
 /* Function Prototypes */
 unsigned long event_stolu(char *str);
 void event_lutos(unsigned long encoding, char *str);
-event* parseICS(char *file, unsigned int *numEvents)
+event* parseICS(char *file, unsigned int *numEvents);
+void printEventArray(event* events, int n);
 /* End Function Prototypes */
 
 void testfun(int *i) {
@@ -20,6 +21,7 @@ int main(int argc, char **argv) {
     char *file_list[argc-1];
 //    char tStamp[MAXLINE];
     int i;
+    unsigned int numEvents;
 
     event* events;
 
@@ -34,7 +36,7 @@ int main(int argc, char **argv) {
         if (strstr(argv[i], ".ics") == NULL) 
             fprintf(stderr, "Invalid format for file %s. Please use *.ics\n",
                     argv[i]);
-        file_list[i] = argv[i];
+        strcpy(file_list[i], argv[i]);
     }
 
     // char *test = "20140131T090000";
@@ -45,10 +47,9 @@ int main(int argc, char **argv) {
     // printf("%s\n%lu\n%s\n", test, test2, test3);
 
     //TODO this is just a test; needs to be changed
-    events = parseICS(file_list[0], &i); 
+    events = parseICS(file_list[0], &numEvents); 
 
-
-
+    printEventArray(events, numEvents);
 
     return 0;
 }
@@ -99,7 +100,7 @@ event* parseICS(char *file, unsigned int *numEvents) {
     char line[MAXLINE];
     char date[MAXLINE];
 
-    int fd = open(file, 'r');
+    int fd = Open(file, 'r', DEF_MODE & ~DEF_UMASK);
     rio_t rio;
     Rio_readinitb(&rio, fd);
     size_t n;
@@ -151,7 +152,7 @@ void printEventArray(event* events, int n) {
     printf("Printing array...\n");
     for (int i = 0; i < n; i++) {
         printf("    %d: start: %s\n", i, events[i]->start);
-        printf("        end:   %s\n", events[i]->end);
-        printf("        rrule: %s\n", events[i]->rrule);
+        printf("       end:   %s\n", events[i]->end);
+        printf("       rrule: %s\n", events[i]->rrule);
     }
 }
