@@ -4,11 +4,15 @@
 
 #include "csapp.h"
 
+/* Function Prototypes */
+unsigned long event_stolu(char *str);
+void event_lutos(unsigned long encoding, char *str);
+/* End Function Prototypes */
 
 int main(int argc, char **argv) {
     char *file_list[argc-1];
+    char tStamp[MAXLINE];
     int i;
-
 
     // Check for valid argument numbers
     if (argc == 1) {
@@ -24,17 +28,47 @@ int main(int argc, char **argv) {
         file_list[i] = argv[i];
     }
 
-    unsigned long test = 2147483647111;
-    unsigned long test2;
-    char *test3 = "There are 2147483647111 cats";
-
-    sscanf(test3, "There are %lu cats", &test2);
-
-    if (test2 == test) {
-        printf("Hallelujah! %lu = %lu!\n", test, test2);
-    }
-
 
     //event_list = parse(&file_list);
     return 0;
+}
+
+
+// - date to hash - yyyyMMddthhmmss ->sscanf -> yyyyMMddhhmm (double)
+// - hash to date - yyyyMMddhhmm -> yyyyMMddthhmmss (idk how)
+
+/* 
+ * assumes yyyymmddThhmmss format, from ics standard 
+ */
+unsigned long event_stolu(char *str) {
+    char date[MAXSIZE];
+    char hhmmss[MAXSIZE];
+    char lu_str[MAXSIZE];
+    unsigned long encoding;
+
+    sscanf(str, "%[^/T]T%s", &date, &hhmmss);
+    strcat(lu_str, date);
+    strcat(lu_str, hhmmss);
+    sscanf(lu_str, "%lu", encoding);
+    return encoding;
+}
+
+void event_lutos(unsigned long encoding, char *str) {
+    char str_enc[MAXSIZE];
+    char buf[MAXSIZE];
+    char date[MAXSIZE];
+    char hhmm[MAXSIZE];
+    strcpy(str, "");
+
+    sprintf(str_enc, "%lu", encoding);
+    strncpy(date, str_enc, 8);
+    strcpy(hhmm, str_enc+8);
+    date[8] = '\0'
+
+    strcat(buf, date);
+    strcat(buf, "T");
+    strcat(buf, hhmm);
+    strcat(buf, "00");
+
+    strcpy(str, buf);
 }
