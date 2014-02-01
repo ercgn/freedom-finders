@@ -48,7 +48,7 @@ unsigned long event_stolu(char *str) {
     char lu_str[MAXLINE];
     unsigned long encoding;
 
-    sscanf(str, "%[^/T]T%s", date, hhmmss);
+    sscanf(str, "%[^T]T%s", date, hhmmss);
     strcat(lu_str, date);
     strcat(lu_str, hhmmss);
     sscanf(lu_str, "%lu", &encoding);
