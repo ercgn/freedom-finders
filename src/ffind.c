@@ -18,22 +18,6 @@ int main(int argc, char **argv) {
     event* f_times;
     unsigned long *enc_list = Calloc(sizeof(unsigned long), MAX_EVENTS);
 
-
-    /* testing zone */
-    unsigned long test = 2014020102390;
-    unsigned long test2;
-    for (i = 1; i < 25; i++) {
-        test2 = addDay(test, i);
-        printf("%i: %lu\n", i, test2);
-    }
-
-
-
-
-    /* testing zone */
-
-
-
     // Check for valid argument numbers
     if (argc == 1) {
         fprintf(stderr, "Usage: %s [<file1>, <file2>, ...]\n", argv[0]);
@@ -41,6 +25,9 @@ int main(int argc, char **argv) {
     } else if (argc > 15) {
         fprintf(stderr, "Maximum number of calenders allowed is %d\n",
                 MAXCAL);
+        exit(0);
+    } else {
+        printf("Building...\n");
     }
 
     // add file string to file array 
@@ -65,11 +52,9 @@ int main(int argc, char **argv) {
     } 
     qsort(enc_list_adj, totalEvents, sizeof(unsigned long), compare);
     f_times = getFreeTimes(enc_list_adj, totalEvents, &numFreeEvent);
-    for (i = 0; i < numFreeEvent; i++) {
-        printf("%s, %s\n", f_times[i]->start, f_times[i]->end);
-    }
-
     createICSFile(f_times, numFreeEvent);
+    printf("Created 'free_times.ics' in current directory!\n");
+    
     freeEventList(e_list);
     freeFileList(f_list);
     Free(enc_list);
@@ -143,15 +128,10 @@ void convertToArray(event_list e_list, unsigned int maxEvents,
                             incr = 0;
                             startDay = 6; //LSB is Saturday 
                             while (byDay != 0) {
-                                printf("%07x\n", byDay);
-                                printf("%lu\n", start);
-                                printf("today: %d\n", today);
-                                printf("incr: %d\n", incr);
                                 if (byDay&1) {
                                     incr = today - startDay;
                                     incr = 7 - incr;
                                     if (incr == 0) incr = 7;
-                                    printf("incr in: %d\n", incr);
                                     for (j = incr; j <= MAX_DAYS; j+=7) {
                                         enc_list[counter] = addDay(start, j);
                                         counter++;
@@ -272,9 +252,9 @@ unsigned long grabMinute(unsigned long encoding) {
 // This function is the most ugly function I've ever written. Needs
 // modification.
 unsigned long addDay(unsigned long encoding, int days) {
-    if (days > 30) {
+    if (days > MAX_DAYS) {
         printf("Warning: This function only supports a max of 30 days\n");
-        printf("You may improve this feature later. :)");
+        printf("You may improve this feature later. :)\n");
     }
     char buf[MAXLINE];
     unsigned long encoding2;
@@ -464,15 +444,13 @@ void freeEvents(event *events, int n) {
     }
 }
 
-long unsigned STARTTIME = 2014020102390;
+long unsigned STARTTIME = 2014011202390;
 event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
     unsigned int count = 0;
     unsigned int event_pointer = 0;
     event *events = Calloc(sizeof(struct event), MAX_EVENTS);
 
     for (int i = 0; i < n; i++) {
-        printf("%lu\n", times[i]);
-        if (times[i] < STARTTIME) continue;
         if (count == 0) { //TODO: fix edge case when start time is actually in middle of event
             // The previous time interval was a free time
             event e = Malloc(sizeof(struct event));
@@ -485,7 +463,9 @@ event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
             } else {
                 event_lutos(times[i-1], e->start, NULL);
             }
-            if (times[i] - times[i-1] >= 300) {
+            if ((times[i] - times[i-1] >= 300) 
+                || ((grabMinute(times[i]) == 0) 
+                && (grabMinute(times[i-1]) < 30))) {
                 event_lutos(times[i], e->end, NULL);
                 events[event_pointer] = e;
                 event_pointer++;

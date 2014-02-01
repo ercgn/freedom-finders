@@ -14,7 +14,7 @@
 #define MAXCAL 15
 #define MAX_CAL_SIZE 1049000 
 #define MAX_EVENTS 65536 
-#define MAX_DAYS 30 
+#define MAX_DAYS 34
 
 struct file_list {
     char *file;
