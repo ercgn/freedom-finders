@@ -7,14 +7,7 @@
 #include "ffind.h"
 
 
-/* Function Prototypes */
-unsigned long event_stolu(char *str, bool isStart);
-void event_lutos(unsigned long encoding, char *str, bool *isStart);
-event* parseICS(char *file, unsigned int *numEvents);
-void printEventArray(event* events, int n);
-event *getFreeTimes(long unsigned *times);
-//void parseRRULE(char *rrule, )
-/* End Function Prototypes */
+
 
 void testfun(int *i) {
     *i = 1000;
@@ -108,12 +101,13 @@ void event_lutos(unsigned long encoding, char *str, bool *isStart) {
     strcat(buf, hhmm);
     strcat(buf, "00");
 
-    if (atoi(start) == 0) {
-        *isStart = true;
-    } else {
-        *isStart = false;
+    if (isStart != NULL) {
+        if (atoi(start) == 0) {
+            *isStart = true;
+        } else {
+            *isStart = false;
+        }
     }
-
     strcpy(str, buf);
 }
 
@@ -202,21 +196,21 @@ event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
     event *events = Calloc(sizeof(struct event), MAXLINE);
 
     for (int i = 0; i < n; i++) {
-        if (count == 0) {
+        if (count == 0) { //TODO: fix edge case when start time is actually in middle of event
             // The previous time interval was a free time
             event e = Malloc(sizeof(struct event));
             e->start = Calloc(sizeof(char), MAXLINE);
             e->end = Calloc(sizeof(char), MAXLINE);
             e->rrule = Calloc(sizeof(char), MAXLINE);
+
+            if (i == 0) {
+                event_lutos(STARTTIME, e->start, NULL);
+            } else {
+                event_lutos(times[i-1], e->start, NULL);
+            }
+            event_lutos(times[i], e->end, NULL);
             events[event_pointer] = e;
             event_pointer++;
-            if (i == 0) {
-                e->start = event_lutos(STARTTIME);
-            }
-            else {
-                e->start = event_lutos(times[i-1]);
-            }
-            e->end = event_lutos(times[i]);
 
             // Handle the time
             if (times[i] % 2 == 0) count++;
@@ -224,8 +218,7 @@ event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
                 printf("SOMETHING HORRIBLE HAS GONE WRONG, WE STOPPED TIME WHEN NOTHING WAS SCHEDULED\n");
                 exit(0);
             }
-        }
-        else {
+        } else {
             if (times[i] % 2 == 0) count++;
             else count--;
         }
@@ -235,16 +228,22 @@ event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
 }
 
 void createICSFile(event *events, unsigned int n) {
-    FILE *fp = fopen("free_times.ics", "ab+");
+    int fd = Open("free_times.ics", 'w', DEF_MODE & ~DEF_UMASK);
+    rio_t rio;
+    Rio_readinitb(&rio, fd);
+    char buf[MAXLINE];
 
     // Write header
-    fprintf(fp, "BEGIN:VCALENDAR\nVERSION:2.0\n");
+    sprintf(buf, "BEGIN:VCALENDAR\nVERSION:2.0\n");
     for (int i = 0; i < n; i++) {
-        fprintf(fp, "%sBEGIN:VEVENT\n", fp);
-        fprintf(fp, "%sDTSTART:%s\n", fp, event[i]->start);
-        fprintf(fp, "%sDTEND:%s\n", fp, event[i]->end);
-        fprintf(fp, "%sEND:VEVENT\n", fp);
+        sprintf(buf, "%sBEGIN:VEVENT\n", buf);
+        sprintf(buf, "%sDTSTART:%s\n", buf, events[i]->start);
+        sprintf(buf, "%sDTEND:%s\n", buf, events[i]->end);
+        sprintf(buf, "%sEND:VEVENT\n", buf);
     }
     //Write footer
-    fprintf(fp, "%sEND:VCALENDAR\n", fp);
+    sprintf(buf, "%sEND:VCALENDAR\n", buf);
+
+    Rio_writen(fd, buf, strlen(buf));
+    close(fd);
 }
