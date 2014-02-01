@@ -127,17 +127,22 @@ event* parseICS(char *file, unsigned int *numEvents) {
         }
         else if (strncmp(line, "DTSTART", 7) == 0) {
             // events[i-1] because we i++ after we created event
-            sscanf(line, "%*[^:]:%s", date);
-
-            strcpy(events[i-1]->start, date);
+            if (!seenEndFlag) {
+                sscanf(line, "%*[^:]:%s", date);
+                strcpy(events[i-1]->start, date);
+            }
         }
         else if (strncmp(line, "DTEND", 5) == 0) {
-            sscanf(line, "%*[^:]:%s", date);
-            strcpy(events[i-1]->end, date);
+            if (!seenEndFlag) {
+                sscanf(line, "%*[^:]:%s", date);
+                strcpy(events[i-1]->end, date);    
+            }
         }
         else if (strncmp(line, "RRULE", 5) == 0) {
-            sscanf(line, "%*[^:]:%s", date);
-            strcpy(events[i-1]->rrule, date);
+            if (!seenEndFlag) {
+                sscanf(line, "%*[^:]:%s", date);
+                strcpy(events[i-1]->rrule, date);
+            }
         }
         else if (strncmp(line, "END:VEVENT", 10) == 0) {
             seenEndFlag = true;
