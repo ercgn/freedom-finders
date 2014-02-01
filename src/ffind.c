@@ -11,11 +11,28 @@ int main(int argc, char **argv) {
     file_list f_list = NULL;
     event_list e_list = NULL;
     file_list f_cur;
-    event_list e_cur;
     int i;
     unsigned int numEvents, totalEvents;
+    unsigned int numFreeEvent;
     event* e;
+    event* f_times;
     unsigned long *enc_list = Calloc(sizeof(unsigned long), MAX_EVENTS);
+
+
+    /* testing zone */
+    unsigned long test = 2014020102390;
+    unsigned long test2;
+    for (i = 1; i < 25; i++) {
+        test2 = addDay(test, i);
+        printf("%i: %lu\n", i, test2);
+    }
+
+
+
+
+    /* testing zone */
+
+
 
     // Check for valid argument numbers
     if (argc == 1) {
@@ -34,8 +51,6 @@ int main(int argc, char **argv) {
         }
         f_list = fListInsert(f_list, argv[i]);
     }
-
-    //TODO this is just a test; needs to be changed
     int count = 0;
     for (f_cur = f_list; f_cur != NULL; f_cur = f_cur->next) {
         numEvents = 0;
@@ -43,28 +58,29 @@ int main(int argc, char **argv) {
         e_list = eListInsert(e_list, e, numEvents);
         count++;
     }
-
-    count = 0;
-    for (e_cur = e_list; e_cur != NULL; e_cur = e_cur->next) {
-        printf("Event %d:", count);
-        printEventArray(e_cur->events, e_cur->numEvents);
-        count++;
+    convertToArray(e_list, MAX_EVENTS, &totalEvents, enc_list);
+    unsigned long *enc_list_adj = Calloc(sizeof(unsigned long), totalEvents);
+    for (i = 0; i < totalEvents; i++) {
+        enc_list_adj[i] = enc_list[i];
+    } 
+    qsort(enc_list_adj, totalEvents, sizeof(unsigned long), compare);
+    f_times = getFreeTimes(enc_list_adj, totalEvents, &numFreeEvent);
+    for (i = 0; i < numFreeEvent; i++) {
+        printf("%s, %s\n", f_times[i]->start, f_times[i]->end);
     }
 
-    convertToArray(e_list, MAX_EVENTS, &totalEvents, enc_list);
-
-    //TODO create an array from events to quicksort
-    //TODO free events
-
-    //TODO output the free time slots in the form of events
-
-    //TODO create a ics file from array of events :<
-    createICSFile(e_list->events, numEvents);
-    //TODO free events
+    createICSFile(f_times, numFreeEvent);
     freeEventList(e_list);
     freeFileList(f_list);
     Free(enc_list);
+    Free(enc_list_adj);
     return 0;
+}
+
+int compare(const void* a, const void* b) {
+    int va = *(const unsigned long*) a;
+    int vb = *(const unsigned long*) b;
+    return (va > vb) - (va < vb);
 }
 
 void convertToArray(event_list e_list, unsigned int maxEvents,
@@ -124,11 +140,18 @@ void convertToArray(event_list e_list, unsigned int maxEvents,
                                 counter++;
                             }
                         } else {
+                            incr = 0;
                             startDay = 6; //LSB is Saturday 
                             while (byDay != 0) {
+                                printf("%07x\n", byDay);
+                                printf("%lu\n", start);
+                                printf("today: %d\n", today);
+                                printf("incr: %d\n", incr);
                                 if (byDay&1) {
                                     incr = today - startDay;
+                                    incr = 7 - incr;
                                     if (incr == 0) incr = 7;
+                                    printf("incr in: %d\n", incr);
                                     for (j = incr; j <= MAX_DAYS; j+=7) {
                                         enc_list[counter] = addDay(start, j);
                                         counter++;
@@ -246,6 +269,8 @@ unsigned long grabMinute(unsigned long encoding) {
 }
 
 //RESTRICTION: Can only add up to 30 days...
+// This function is the most ugly function I've ever written. Needs
+// modification.
 unsigned long addDay(unsigned long encoding, int days) {
     if (days > 30) {
         printf("Warning: This function only supports a max of 30 days\n");
@@ -266,18 +291,23 @@ unsigned long addDay(unsigned long encoding, int days) {
         if (d+days > 31) {
             if (m == 12) y++;
             m = (m + 1) % 12;
+            if (m == 0) m = 1;
         }
         d = (d+days) % 31;
+        if (d == 0) d = 31;
     } else if (m == 4 || m == 6 || m == 9 || m == 11) {
         if (d+days > 30) m++;
         d = (d+days) % 30;
+        if (d == 0) d = 30;
     } else {
         if (y%4 == 0) {
             if (d+days > 29) m++;
             d = (d+days) % 29;
+            if (d == 0) d = 29;
         } else {
             if (d+days > 28) m++;
             d = (d+days) % 28;
+            if (d == 0) d = 28;
         }
     }
     sprintf(buf, "%lu%02lu%02lu%02lu%02lu%d", y,m,d,h,min,b);
@@ -307,7 +337,6 @@ unsigned long event_stolu(char *str, bool startFlag, bool isStart) {
             strcat(lu_str, "1");
         }
     }    
-    printf("%s\n", lu_str);
     sscanf(lu_str, "%lu", &encoding);
     return encoding;
 }
@@ -317,8 +346,10 @@ void event_lutos(unsigned long encoding, char *str, bool *isStart) {
     char buf[MAXLINE];
     char date[MAXLINE];
     char hhmm[MAXLINE];
-    char start[1];
+    char start[MAXLINE];
     strcpy(str, "");
+    strcpy(buf, "");
+
 
     sprintf(str_enc, "%lu", encoding);
     strncpy(date, str_enc, 8);
@@ -437,9 +468,11 @@ long unsigned STARTTIME = 2014020102390;
 event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
     unsigned int count = 0;
     unsigned int event_pointer = 0;
-    event *events = Calloc(sizeof(struct event), MAXLINE);
+    event *events = Calloc(sizeof(struct event), MAX_EVENTS);
 
     for (int i = 0; i < n; i++) {
+        printf("%lu\n", times[i]);
+        if (times[i] < STARTTIME) continue;
         if (count == 0) { //TODO: fix edge case when start time is actually in middle of event
             // The previous time interval was a free time
             event e = Malloc(sizeof(struct event));
@@ -452,9 +485,11 @@ event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
             } else {
                 event_lutos(times[i-1], e->start, NULL);
             }
-            event_lutos(times[i], e->end, NULL);
-            events[event_pointer] = e;
-            event_pointer++;
+            if (times[i] - times[i-1] >= 300) {
+                event_lutos(times[i], e->end, NULL);
+                events[event_pointer] = e;
+                event_pointer++;
+            }
 
             // Handle the time
             if (times[i] % 2 == 0) count++;

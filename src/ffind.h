@@ -12,9 +12,9 @@
 #include "csapp.h"
 
 #define MAXCAL 15
-#define MAX_CAL_SIZE 32768
+#define MAX_CAL_SIZE 1049000 
 #define MAX_EVENTS 65536 
-#define MAX_DAYS 14 
+#define MAX_DAYS 30 
 
 struct file_list {
     char *file;
@@ -58,6 +58,7 @@ void createICSFile(event *events, unsigned int n); /* WORKS */
 rrule parseRRULE(char *rrStr);
 void convertToArray(event_list e_list, unsigned int maxEvents,
                 unsigned int *totalEvents, unsigned long *enc_list);
+int compare(const void *a, const void *b);
 
 /* Time manipulation functions */ 
 int dayofweek(int d, int m, int y);
