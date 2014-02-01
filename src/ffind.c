@@ -6,38 +6,42 @@
 #include "csapp.h"
 #include "ffind.h"
 
-
-
-
-void testfun(int *i) {
-    *i = 1000;
-}
-
 int main(int argc, char **argv) {
 
-    char *file_list[argc-1];
+    file_list f_list = NULL;
+    event_list e_list = NULL;
 //    char tStamp[MAXLINE];
     int i;
     unsigned int numEvents;
-
-    event* events;
+    file_list cur;
 
     // Check for valid argument numbers
     if (argc == 1) {
         fprintf(stderr, "Usage: %s [<file1>, <file2>, ...]\n", argv[0]);
         exit(0);
+    } else if (argc > 15) {
+        fprintf(stderr, "Maximum number of calenders allowed is %d\n",
+                MAXCAL);
     }
 
     // add file string to file array 
     for (i = 1; i < argc; i++) {
-        if (strstr(argv[i], ".ics") == NULL) 
+        if (strstr(argv[i], ".ics") == NULL) {
             fprintf(stderr, "Invalid format for file %s. Please use *.ics\n",
                     argv[i]);
-        strcpy(file_list[i], argv[i]);
+        }
+        f_list = fListInsert(f_list, argv[i]);
     }
 
     //TODO this is just a test; needs to be changed
-    events = parseICS(file_list[0], &numEvents); 
+    int count = 0;
+    for (cur = f_list; cur != NULL; cur = cur->next) {
+        printf("%d: %s\n", count, cur->file);
+        count++;
+    }
+    e_list = eListInsert(e_list, parseICS(f_list->file, &numEvents));
+    printEventArray(e_list->events, numEvents);
+    createICSFile(e_list->events, numEvents);
 
     //TODO create an array from events to quicksort
     //TODO free events
@@ -46,9 +50,33 @@ int main(int argc, char **argv) {
 
     //TODO create a ics file from array of events :<
     //TODO free events
+
+
+    for (i = 0; i < MAXCAL; i++) {
+        //insert free code here.        
+    } 
+    freeEventList(e_list);
+    freeFileList(f_list);
     return 0;
 }
 
+// insertion is in front
+file_list fListInsert(file_list f_list, char *file) {
+    file_list new_node = Malloc(sizeof(struct file_list));
+    new_node->file = Calloc(sizeof(char), MAXLINE);
+    strcpy(new_node->file, file);
+    new_node->next = f_list;
+    return new_node;
+}
+
+
+// insertion is in front
+event_list eListInsert(event_list e_list, event *events) {
+    event_list new_node = Malloc(sizeof(struct event_list));
+    new_node->events = events; 
+    new_node->next = e_list;
+    return new_node;
+}
 
 // - date to hash - yyyyMMddthhmmss ->sscanf -> yyyyMMddhhmmb (double)
 // - hash to date - yyyyMMddhhmmb -> yyyyMMddthhmmss (idk how)
@@ -115,7 +143,7 @@ event* parseICS(char *file, unsigned int *numEvents) {
     char line[MAXLINE];
     char date[MAXLINE];
 
-    int fd = Open(file, 'r', DEF_MODE & ~DEF_UMASK);
+    int fd = Open(file, O_RDONLY, DEF_MODE & ~DEF_UMASK);
     rio_t rio;
     Rio_readinitb(&rio, fd);
     size_t n;
@@ -178,6 +206,20 @@ void printEventArray(event *events, int n) {
     }
 }
 
+void freeFileList(file_list f_list) {
+    file_list cur;
+    for (cur = f_list; cur != NULL; cur = cur->next) {
+        Free(cur);
+    }
+}
+
+void freeEventList(event_list e_list) {
+    event_list cur;
+    for (cur = e_list; cur != NULL; cur = cur->next) {
+        Free(cur);
+    }
+}
+
 void freeEvents(event *events, int n) {
     for (int i = 0; i < n; i++) {
         Free(events[i]->start);
@@ -228,17 +270,20 @@ event *getFreeTimes(long unsigned *times, unsigned int n, unsigned int *m) {
 }
 
 void createICSFile(event *events, unsigned int n) {
-    int fd = Open("free_times.ics", 'w', DEF_MODE & ~DEF_UMASK);
+    int fd = Open("free_times.ics", 
+                   O_WRONLY | O_CREAT | O_TRUNC, 
+                   DEF_MODE & ~DEF_UMASK);
     rio_t rio;
     Rio_readinitb(&rio, fd);
     char buf[MAXLINE];
 
     // Write header
-    sprintf(buf, "BEGIN:VCALENDAR\nVERSION:2.0\n");
+    strcpy(buf, "BEGIN:VCALENDAR\nVERSION:2.0\n");
     for (int i = 0; i < n; i++) {
         sprintf(buf, "%sBEGIN:VEVENT\n", buf);
         sprintf(buf, "%sDTSTART:%s\n", buf, events[i]->start);
         sprintf(buf, "%sDTEND:%s\n", buf, events[i]->end);
+        sprintf(buf, "%sSUMMARY:Free Time!\n", buf);
         sprintf(buf, "%sEND:VEVENT\n", buf);
     }
     //Write footer

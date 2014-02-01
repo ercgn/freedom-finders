@@ -12,5 +12,5 @@ ffind.o: ffind.c ffind.h
 ffind: ffind.o csapp.o 
 
 clean:
-	rm -f *~ *.o ffind
+	rm -f *~ *.o ffind free_times.ics
 
