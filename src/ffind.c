@@ -148,11 +148,21 @@ event* parseICS(char *file, unsigned int *numEvents) {
     return events;
 }
 
-void printEventArray(event* events, int n) {
+void printEventArray(event *events, int n) {
     printf("Printing array...\n");
     for (int i = 0; i < n; i++) {
         printf("    %d: start: %s\n", i, events[i]->start);
         printf("       end:   %s\n", events[i]->end);
         printf("       rrule: %s\n", events[i]->rrule);
     }
+}
+
+void freeEvents(event *events, int n) {
+    for (int i = 0; i < n; i++) {
+        Free(events[i]->start);
+        Free(events[i]->end);
+        Free(events[i]->rrule);
+        Free(events[i]);
+    }
+    Free(events);
 }
