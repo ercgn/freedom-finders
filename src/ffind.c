@@ -12,6 +12,7 @@ unsigned long event_stolu(char *str, bool isStart);
 void event_lutos(unsigned long encoding, char *str, bool *isStart);
 event* parseICS(char *file, unsigned int *numEvents);
 void printEventArray(event* events, int n);
+event *getFreeTimes(long unsigned *times);
 //void parseRRULE(char *rrule, )
 /* End Function Prototypes */
 
@@ -190,7 +191,7 @@ void freeEvents(event *events, int n) {
     Free(events);
 }
 
-events *getFreeTimes(long unsigned *times) {
+event *getFreeTimes(long unsigned *times) {
     unsigned int i = 0;
 
 }
