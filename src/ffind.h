@@ -14,6 +14,6 @@ typedef struct {
     char *start;
     char *end;
     char *rrule;
-} *event;
+} event;
 
 #endif /* __FFIND_H__ */

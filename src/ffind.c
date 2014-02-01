@@ -9,6 +9,7 @@
 /* Function Prototypes */
 unsigned long event_stolu(char *str);
 void event_lutos(unsigned long encoding, char *str);
+event* parseICS(char *file, unsigned int *numEvents)
 /* End Function Prototypes */
 
 void testfun(int *i) {
@@ -19,6 +20,8 @@ int main(int argc, char **argv) {
     char *file_list[argc-1];
 //    char tStamp[MAXLINE];
     int i;
+
+    event* events;
 
     // Check for valid argument numbers
     if (argc == 1) {
@@ -34,17 +37,19 @@ int main(int argc, char **argv) {
         file_list[i] = argv[i];
     }
 
-    char *test = "20140131T090000";
-    unsigned long test2 = event_stolu(test);
-    char test3[MAXLINE];
-    event_lutos(test2, test3);
+    // char *test = "20140131T090000";
+    // unsigned long test2 = event_stolu(test);
+    // char test3[MAXLINE];
+    // event_lutos(test2, test3);
 
-    printf("%s\n%lu\n%s\n", test, test2, test3);
+    // printf("%s\n%lu\n%s\n", test, test2, test3);
 
-    printf("%d\n", i);
-    testfun(&i);
-    printf("%d\n", i);
-    //event_list = parse(&file_list);
+    //TODO this is just a test; needs to be changed
+    events = parseICS(file_list[0], &i); 
+
+
+
+
     return 0;
 }
 
@@ -90,7 +95,7 @@ void event_lutos(unsigned long encoding, char *str) {
     strcpy(str, buf);
 }
 
-void *parseICS(char *file, unsigned int *numEvents) {
+event* parseICS(char *file, unsigned int *numEvents) {
     char line[MAXLINE];
     char date[MAXLINE];
 
@@ -99,7 +104,7 @@ void *parseICS(char *file, unsigned int *numEvents) {
     Rio_readinitb(&rio, fd);
     size_t n;
 
-    event *events = Calloc(MAXLINE, sizeof(event));
+    event *events = Calloc(sizeof(event), MAXLINE);
     bool seenEndFlag = true;
     int i = 0;
 
@@ -134,6 +139,6 @@ void *parseICS(char *file, unsigned int *numEvents) {
         }
     }
     close(fd);
-    numEvents = i;
+    *numEvents = i;
     return events;
 }
